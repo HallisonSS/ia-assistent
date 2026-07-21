@@ -1,0 +1,20 @@
+groups:
+- name: basic
+  rules:
+  - alert: HighCPU
+    expr: avg(rate(process_cpu_seconds_total[5m])) > 0.8
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "CPU alta"
+      description: "Uso de CPU acima de 80% por 2m"
+
+  - alert: LowDisk
+    expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.1
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Disco baixo"
+      description: "Menos de 10% livre em /"
