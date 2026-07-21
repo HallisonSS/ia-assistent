@@ -1,5 +1,9 @@
 from fastapi import FastAPI, Request, HTTPException
 from pydantic import BaseModel
+
+from .admin import router as admin_router
+app.include_router(admin_router)
+
 import os
 import redis
 import json
