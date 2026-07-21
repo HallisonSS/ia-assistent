@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Whitelist estrita de comandos seguros
+set -euo pipefail
+
+ALLOWED_CMDS=(
+  "systemctl status"
+  "systemctl restart"
+  "systemctl start"
+  "systemctl stop"
+  "journalctl -u"
+  "apt update"
+  "apt install -y"
+  "apt upgrade -y"
+  "ufw allow"
+  "ufw deny"
+  "ufw reload"
+  "df -h"
+)
+
+join_by() { local IFS="$1"; shift; echo "$*"; }
+
+CMD="$1"; shift || true
+ARGS=("$@")
+FULL="$CMD $(join_by ' ' "${ARGS[@]:-}")"
+
+allowed=false
+for pattern in "${ALLOWED_CMDS[@]}"; do
+  if [[ "$FULL" == "$pattern"* ]]; then
+    allowed=true
+    break
+  fi
+done
+
+if [ "$allowed" = false ]; then
+  echo "Comando não permitido: $FULL" >&2
+  exit 2
+fi
+
+exec $FULL
