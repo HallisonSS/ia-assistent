@@ -1,0 +1,9 @@
+services:
+  promtail:
+    image: grafana/promtail:2.9.6
+    command: -config.file=/etc/promtail/config.yaml
+    volumes:
+      - ./observability/promtail/config.yaml:/etc/promtail/config.yaml
+      - /var/log:/var/log:ro
+    depends_on:
+      - loki
