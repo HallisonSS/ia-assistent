@@ -1,0 +1,113 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: assist
+      POSTGRES_PASSWORD: strong_password_here
+      POSTGRES_DB: assistdb
+    volumes:
+      - ../db/data:/var/lib/postgresql/data
+      - ../db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks: [assist]
+    healthcheck:
+      test: ["CMD","pg_isready","-U","assist"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7
+    command: ["redis-server","--appendonly","yes"]
+    volumes:
+      - ../bus/data:/data
+    networks: [assist]
+    ports:
+      - "6379:6379"
+
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ../llm/data:/root/.ollama
+    ports:
+      - "11434:11434"
+    networks: [assist]
+
+  agent-api:
+    build: ../agent
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      ALERTS_STREAM: alerts_stream
+      ACTIONS_STREAM: actions_stream
+    depends_on: [redis]
+    networks: [assist]
+    ports:
+      - "8000:8000"
+
+  agent-worker:
+    build: ../agent
+    command: ["python","-u","worker/worker.py"]
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      ALERTS_STREAM: alerts_stream
+      DECISIONS_STREAM: decisions_stream
+      ACTIONS_STREAM: actions_stream
+      WORKER_GROUP: assist_group
+      DB_DSN: postgresql://assist:strong_password_here@postgres:5432/assistdb
+      USE_OLLAMA: "true"
+      OLLAMA_URL: [ollama](http://ollama:11434)
+    depends_on: [redis, postgres, ollama]
+    networks: [assist]
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    volumes:
+      - ../observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../observability/prometheus/data:/prometheus
+    ports:
+      - "9090:9090"
+    networks: [assist]
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    volumes:
+      - ../observability/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    ports:
+      - "9093:9093"
+    networks: [assist]
+    depends_on: [agent-api]
+
+  loki:
+    image: grafana/loki:2.9.6
+    command: -config.file=/etc/loki/config.yaml
+    volumes:
+      - ../observability/loki/config.yaml:/etc/loki/config.yaml
+      - ../observability/loki/data:/loki
+    ports:
+      - "3100:3100"
+    networks: [assist]
+
+  promtail:
+    image: grafana/promtail:2.9.6
+    command: -config.file=/etc/promtail/config.yaml
+    volumes:
+      - ../observability/promtail/config.yaml:/etc/promtail/config.yaml
+      - /var/log:/var/log:ro
+    depends_on: [loki]
+    networks: [assist]
+
+  grafana:
+    image: grafana/grafana:11.0.0
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin_pass
+    volumes:
+      - ../observability/grafana/data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    networks: [assist]
+
+networks:
+  assist:
+    driver: bridge
