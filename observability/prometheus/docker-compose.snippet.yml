@@ -1,0 +1,8 @@
+services:
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./observability/prometheus/data:/prometheus
+    ports:
+      - "9090:9090"
