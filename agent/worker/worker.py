@@ -58,6 +58,25 @@ def decide_remediation(alert):
     annotations = json.loads(alert.get("annotations","{}"))
     hint = annotations.get("summary","") or annotations.get("description","")
 
+def process_approved(conn):
+    while True:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id, action, params FROM approvals WHERE status='approved' ORDER BY id ASC LIMIT 10")
+            rows = cur.fetchall()
+        for id_, action, params in rows:
+            p = json.loads(params)
+            try:
+                validate_params(action, p)
+                cmd_tpl = POLICY_SAFE_ACTIONS[action]["cmd"]
+                cmd = cmd_tpl.format(**p)
+                code, out, err = run_command(cmd)
+                log_audit(conn, "execution", "approval", decision_d={"action":action,"params":p}, command=cmd, stdout=out, stderr=err, exit_code=code)
+            finally:
+                with conn.cursor() as cur:
+                    cur.execute("UPDATE approvals SET status='reconciled' WHERE id=%s", (id_,))
+                conn.commit()
+        time.sleep(5)
+
     # Regras simples
     if "InstanceDown" in labels.get("alertname",""):
         plan = {"action":"restart_service","params":{"service":"apache2"}, "reason":"Instance down - tentar reiniciar apache2"}
