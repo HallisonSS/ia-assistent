@@ -53,3 +53,21 @@ Crie diretórios:
 mkdir -p ai-assistente/{observability,agent,executor,db,llm,bus,configs,deploy}
 cd ai-assistente
 git init
+
+Suba o Postgres e aplique o schema:
+docker run --rm -v $(pwd)/db:/mnt -e PGPASSWORD=strong_password_here --network host postgres:16 psql -h 127.0.0.1 -U assist -d assistdb -f /mnt/init.sql
+
+Após subir, adicione data sources Prometheus (
+prometheus
+ e Loki (
+loki
+ e importe dashboards de Node Exporter,
+
+
+
+
+
+
+
+
+
