@@ -12,7 +12,7 @@ GROUP = os.getenv("WORKER_GROUP","assist_group")
 DB_DSN = os.getenv("DB_DSN","postgresql://assist:strong_password_here@postgres:5432/assistdb")
 
 USE_OLLAMA = os.getenv("USE_OLLAMA","true") == "true"
-OLLAMA_URL = os.getenv("OLLAMA_URL","[ollama](http://ollama:11434)")
+OLLAMA_URL = os.getenv("OLLAMA_URL","ollamahttp://ollama:11434")
 OPENAI_URL = os.getenv("OPENAI_BASE_URL","")
 OPENAI_KEY = os.getenv("OPENAI_API_KEY","")
 
