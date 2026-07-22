@@ -4,6 +4,14 @@ from pydantic import BaseModel
 from .admin import router as admin_router
 app.include_router(admin_router)
 
+from app.routers.voice import (
+    router as voice_router
+)
+
+app.include_router(
+    voice_router
+)
+
 import os
 import redis
 import json
