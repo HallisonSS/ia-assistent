@@ -66,6 +66,17 @@ services:
       - ollama
     networks: assist
 
+  grafana:
+    image: grafana/grafana:11.0.0
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin_pass
+    volumes:
+      - ../observability/grafana/data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    networks: assist
+    
   prometheus:
     image: prom/prometheus:v2.54.1
     volumes:
@@ -106,15 +117,6 @@ services:
     networks: assist
     
   grafana:
-    image: grafana/grafana:11.0.0
-    environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin_pass
-    volumes:
-      - ../observability/grafana/data:/var/lib/grafana
-    ports:
-      - "3000:3000"
-    networks: assist
 
 networks:
   assist:
