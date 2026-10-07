@@ -1,5 +1,13 @@
 services:
 
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ../llm/data:/root/.ollama
+    ports:
+      - "11434:11434"
+    networks: assist
+    
   postgres:
     image: postgres:16
     environment:
@@ -25,15 +33,7 @@ services:
     networks: assist
     ports:
       - "6379:6379"
-
-  ollama:
-    image: ollama/ollama:latest
-    volumes:
-      - ../llm/data:/root/.ollama
-    ports:
-      - "11434:11434"
-    networks: assist
-
+      
   agent-api:
     build: ../agent
     environment:
