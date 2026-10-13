@@ -3,7 +3,7 @@ from pydantic import BaseModel
 import psycopg, os, json
 
 router = APIRouter(prefix="/admin", tags=["admin"])
-DB_DSN = os.getenv("DB_DSN","postgresql://assist:strong_password_here@postgres:5432/assistdb")
+DB_DSN = os.getenv("DB_DSN","postgresql://assist:${POSTGRES_PASSWORD}@postgres:5432/assistdb")
 
 class Decision(BaseModel):
   approval_id: int
