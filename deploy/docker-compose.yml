@@ -64,7 +64,7 @@ services:
 
   agent-worker:
     build: ../agent
-    command: ["python","-u","worker/worker.py"]
+    command: ["python","-U","worker/worker.py"]
     environment:
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -72,7 +72,7 @@ services:
       DECISIONS_STREAM: decisions_stream
       ACTIONS_STREAM: actions_stream
       WORKER_GROUP: assist_group
-      DB_DSN: postgresql://assist:${POSTGRES_PASSWORD}@postgres:5432/assistdb
+      DB_DSN: ${DB_DNS}
       USE_OLLAMA: "true"
       OLLAMA_URL: "http://ollama:11434"
 #    depends_on: 
