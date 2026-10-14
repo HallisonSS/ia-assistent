@@ -35,6 +35,12 @@ services:
       - ../bus/data:/data
     networks: 
       - assist
+  
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 5
+
     ports:
       - "6379:6379"
       
@@ -47,6 +53,9 @@ services:
       ACTIONS_STREAM: actions_stream
 #    depends_on: 
 #      - redis
+    depends_on:
+       redis:
+         condition: service_healthy
     networks: 
       - assist
     ports:
