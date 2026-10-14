@@ -19,5 +19,6 @@ class Settings(BaseSettings):
 
     ALERTS_STREAM: str = "alerts_stream"
 
+    ACTIONS_STREAM: str = "actions_stream"
 
 settings = Settings()
