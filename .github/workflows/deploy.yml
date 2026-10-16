@@ -15,9 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.vars.outputs.tag }}
+      
     steps:
       - uses: actions/checkout@v4
-
       - id: vars
         run: echo "tag=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
@@ -27,7 +27,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           
   deploy:
-    name: Build and Deploy agent-api
+    name: Deploy Agent-API
     runs-on: self-hosted, Linux, X64
 
     steps:
