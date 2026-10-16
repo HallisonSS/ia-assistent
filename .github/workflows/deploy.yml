@@ -21,6 +21,7 @@ jobs:
 
       - uses: docker/build-push-action@v6
         with:
+          context: . 
           push: true
           tags: |
             ${{ secrets.DOCKER_USER }}/agent-api:${{ steps.vars.outputs.tag }}
@@ -28,7 +29,7 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: [self-hosted, home-server]   # roda no seu servidor
+    runs-on: self-hosted, home-server  # roda no seu servidor
     steps:
       - uses: actions/checkout@v4
       - name: Atualizar container
