@@ -6,25 +6,39 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.vars.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
+
+      - id: vars
+        run: echo "tag=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
       - uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - uses: docker/build-push-action@v6
         with:
-          context: ./agent
+          context: .
           push: true
           tags: |
-            jhoninfracontrol/agent-api:${{ github.sha }}
-            jhoninfracontrol/agent-api:latest
+            ${{ secrets.DOCKER_USER }}/agent-api:${{ steps.vars.outputs.tag }}
+            ${{ secrets.DOCKER_USER }}/agent-api:latest
 
   deploy:
     needs: build
-    runs-on: self-hosted
+    runs-on: [self-hosted, home-server]   # roda no seu servidor
     steps:
-      - run: |
-          cd /opt/assistent
-          IMAGE_TAG=${{ github.sha }} docker compose pull
-          IMAGE_TAG=${{ github.sha }} docker compose up -d
+      - uses: actions/checkout@v4
+      - name: Atualizar container
+        env:
+          DOCKER_USER: ${{ secrets.DOCKER_USER }}
+          IMAGE_TAG: ${{ needs.build.outputs.tag }}
+        run: |
+          echo "IMAGE_TAG=$IMAGE_TAG" > .env
+          echo "DOCKER_USER=$DOCKER_USER" >> .env
+          docker compose pull
+          docker compose up -d
+          docker image prune -f
