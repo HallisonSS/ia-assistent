@@ -1,7 +1,14 @@
-name: ci-cd
+name: Deploy IA Assistant
+
 on:
   push:
-    branches: main
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ia-assistant-deploy
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -18,27 +25,50 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - uses: docker/build-push-action@v6
-        with:
-          context: . 
-          push: true
-          tags: |
-            ${{ secrets.DOCKER_USER }}/agent-api:${{ steps.vars.outputs.tag }}
-            ${{ secrets.DOCKER_USER }}/agent-api:latest
-
+          
   deploy:
-    needs: build
-    runs-on: self-hosted, home-server  # roda no seu servidor
+    name: Build and Deploy agent-api
+    runs-on: self-hosted, Linux, X64
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Atualizar container
-        env:
-          DOCKER_USER: ${{ secrets.DOCKER_USER }}
-          IMAGE_TAG: ${{ needs.build.outputs.tag }}
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check Docker
         run: |
-          echo "IMAGE_TAG=$IMAGE_TAG" > .env
-          echo "DOCKER_USER=$DOCKER_USER" >> .env
-          docker compose pull
-          docker compose up -d
+          docker --version
+          docker compose version
+
+      - name: Validate Compose
+        run: |
+          docker compose config --quiet
+
+      - name: Build agent-api image
+        run: |
+          docker compose build agent-api
+
+      - name: Recreate agent-api
+        run: |
+          docker compose up -d \
+            --no-deps \
+            --force-recreate \
+            agent-api
+
+      - name: Verify agent-api
+        run: |
+          docker compose ps agent-api
+          docker compose logs --tail=50 agent-api
+
+      - name: Remove unused Docker images
+        if: success()
+        run: |
           docker image prune -f
+
+      - name: Deployment summary
+        if: success()
+        run: |
+          echo "Deploy do agent-api concluído."
+          docker image ls
+
+
+          
