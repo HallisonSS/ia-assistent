@@ -21,8 +21,6 @@ jobs:
 
       - uses: docker/build-push-action@v6
         with:
-          context: ./agent
-          context: ./worker
           push: true
           tags: |
             ${{ secrets.DOCKER_USER }}/agent-api:${{ steps.vars.outputs.tag }}
