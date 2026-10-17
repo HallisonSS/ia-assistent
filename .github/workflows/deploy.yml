@@ -1,43 +1,82 @@
-name: ci-cd
+# Salve como: .github/workflows/deploy.yml
+name: CI/CD - Build e Deploy
+
 on:
   push:
     branches: main
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: ${{ secrets.DOCKER_USER }}/agent-api
+  CONTAINER_NAME: agent-api
+  APP_PORT: "8000"        # porta exposta no servidor
+  CONTAINER_PORT: "3000"  # porta interna do container
 
 jobs:
   build:
-    runs-on: ubuntu-ia
+    name: Build e push para o Docker Hub
+    runs-on: ubuntu-latest
     outputs:
-      tag: ${{ steps.vars.outputs.tag }}
+      image_tag: ${{ steps.meta.outputs.tag }}
+      digest: ${{ steps.build.outputs.digest }}   # sha256:...
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - id: vars
-        run: echo "tag=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+      - name: Definir tag da imagem (SHA do commit)
+        id: meta
+        run: echo "tag=sha-${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
 
-      - uses: docker/login-action@v3
+      - name: Login no Docker Hub
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - uses: docker/build-push-action@v6
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build e push
+        id: build
+        uses: docker/build-push-action@v6
         with:
+          context: .
           push: true
           tags: |
-            ${{ secrets.DOCKER_USER }}/agent-api:${{ steps.vars.outputs.tag }}
-            ${{ secrets.DOCKER_USER }}/agent-api:latest
+            ${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.tag }}
+            ${{ env.IMAGE_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   deploy:
+    name: Deploy no servidor Linux (self-hosted)
     needs: build
-    runs-on: self-hosted, Linux, X64   # roda no seu servidor
+    runs-on: self-hosted, Linux, X64 # ou [self-hosted, linux] se você usa labels
     steps:
-      - uses: actions/checkout@v4
-      - name: Atualizar container
-        env:
-          DOCKERH_USER: ${{ secrets.DOCKER_USER }}
-          IMAGE_TAG: ${{ needs.build.outputs.tag }}
+      - name: Login no Docker Hub (servidor)
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Baixar imagem
+        run: docker pull ${{ env.IMAGE_NAME }}:${{ needs.build.outputs.image_tag }}
+
+      - name: Subir novo container
         run: |
-          echo "IMAGE_TAG=$IMAGE_TAG" > .env
-          echo "DOCKER_USER=$DOCKER_USER" >> .env
-          docker compose pull
-          docker compose up -d
-          docker image prune -f
+          docker stop ${{ env.CONTAINER_NAME }} 2>/dev/null || true
+          docker rm ${{ env.CONTAINER_NAME }} 2>/dev/null || true
+          docker run -d \
+            --name ${{ env.CONTAINER_NAME }} \
+            --restart unless-stopped \
+            -p ${{ env.APP_PORT }}:${{ env.CONTAINER_PORT }} \
+            ${{ env.IMAGE_NAME }}:${{ needs.build.outputs.image_tag }}
+
+      - name: Verificar se está rodando
+        run: |
+          sleep 5
+          docker ps --filter "name=${{ env.CONTAINER_NAME }}"
+          docker inspect --format='{{.Image}}' ${{ env.CONTAINER_NAME }}
+
+      - name: Limpar imagens antigas
+        run: docker image prune -f
