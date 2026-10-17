@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-ia-runner
+    runs-on: ubuntu-ia
     outputs:
       tag: ${{ steps.vars.outputs.tag }}
     steps:
@@ -21,7 +21,6 @@ jobs:
 
       - uses: docker/build-push-action@v6
         with:
-          context: .
           push: true
           tags: |
             ${{ secrets.DOCKER_USER }}/agent-api:${{ steps.vars.outputs.tag }}
