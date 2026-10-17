@@ -28,7 +28,7 @@ jobs:
           
   deploy:
     name: Deploy Agent-API
-    runs-on: self-hosted, Linux, X64
+    runs-on: selfhosted
 
     steps:
       - name: Checkout repository
