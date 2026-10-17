@@ -33,7 +33,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Atualizar container
         env:
-          DOCKERHUB_USER: ${{ secrets.DOCKER_USER }}
+          DOCKERH_USER: ${{ secrets.DOCKER_USER }}
           IMAGE_TAG: ${{ needs.build.outputs.tag }}
         run: |
           echo "IMAGE_TAG=$IMAGE_TAG" > .env
