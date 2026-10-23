@@ -1,9 +1,9 @@
-import os, json, subprocess, shlex, time, sys
+import os, json, subprocess, shlex, time, sys, hashlib, httpx,
+from typing import Literal
 from multiprocessing import Process
-
-import redis
-import psycopg
-import httpx
+from psycopg.rows import dict_row
+from fastapi import APIRouter, Depends, Header, HTTPException
+from pydantic import BaseModel
 
 # ---------- Configuração (tudo via ambiente) ----------
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
