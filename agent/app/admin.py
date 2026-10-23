@@ -1,6 +1,6 @@
+import psycopg, os, json
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-import psycopg, os, json
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 DB_DSN = os.getenv("DB_DSN","postgresql://assist:${POSTGRES_PASSWORD}@postgres:5432/assistdb")
