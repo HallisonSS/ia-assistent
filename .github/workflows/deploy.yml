@@ -17,7 +17,7 @@ jobs:
 
 deploy:
     needs: build
-    runs-on: self-hosted
+    runs-on: self-hosted, Linux, x64
     env:
       TAG: ${{ github.sha }}
       DH_USER: ${{ secrets.DOCKER_USER }}
