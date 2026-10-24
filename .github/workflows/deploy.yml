@@ -14,6 +14,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: echo "$DH_TOKEN" | docker login -u "$DH_USER" --password-stdin
+      
+      - name: Build e push
+        run: |
+          docker build -t $DOCKERHUB_USER/agent-api:$IMAGE_TAG .
+          docker push $DOCKERHUB_USER/agent-api:$IMAGE_TAG
 
   deploy:
     needs: build
@@ -22,6 +27,7 @@ jobs:
       TAG: ${{ github.sha }}
       DH_USER: ${{ secrets.DOCKER_USER }}
       DH_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      
     steps:
       - uses: actions/checkout@v4
       - run: echo "$DH_TOKEN" | docker login -u "$DH_USER" --password-stdin
