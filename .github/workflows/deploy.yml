@@ -1,4 +1,4 @@
-name: ci-cd
+name: Deploy
 on:
   push:
     branches: main
@@ -9,13 +9,15 @@ jobs:
     env:
       IMAGE: ${{ secrets.DOCKER_USER }}/agent-api
       TAG: ${{ github.sha }}
+      DH_USER: ${{ secrets.DOCKER_USER }}
+      DH_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-      - run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKER_USER }}" --password-stdin
+      - run: echo "$DH_TOKEN" | docker login -u "$DH_USER" --password-stdin
       - run: docker build -t $IMAGE:$TAG .
       - run: docker push $IMAGE:$TAG
 
-deploy:
+  deploy:
     needs: build
     runs-on: self-hosted, Linux, x64
     env:
@@ -28,4 +30,3 @@ deploy:
       - run: docker compose pull
       - run: docker compose up -d
       - run: docker image prune -f
-      
