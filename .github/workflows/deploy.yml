@@ -15,11 +15,6 @@ jobs:
       - uses: actions/checkout@v4
       - run: echo "$DH_TOKEN" | docker login -u "$DH_USER" --password-stdin
       
-      - name: Build e push
-        run: |
-          docker build -t $DOCKERHUB_USER/agent-api:$IMAGE_TAG .
-          docker push $DOCKERHUB_USER/agent-api:$IMAGE_TAG
-
   deploy:
     needs: build
     runs-on: self-hosted, Linux, x64
