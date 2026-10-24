@@ -20,7 +20,7 @@ services:
       - ../db/data:/var/lib/postgresql/data
       - ../db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks: 
-      - data
+      - assist
     
     healthcheck:
       test: ["CMD","pg_isready","-U assist -d assistdb"]
@@ -34,7 +34,7 @@ services:
     volumes:
       - ../bus/data:/data
     networks: 
-      - data
+      - assist
   
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -45,7 +45,7 @@ services:
 #      - "6379:6379"
       
   agent-api:
-    build: ../agent
+    build: ./agent
     environment:
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -58,12 +58,12 @@ services:
          condition: service_healthy
     networks: 
       - assist
-      - data
+  
     ports:
       - "8000:8000"
 
   agent-worker:
-    build: ../agent
+    build: ./agent
     command: ["python","-U","worker/worker.py"]
     environment:
       REDIS_HOST: redis
@@ -72,7 +72,7 @@ services:
       DECISIONS_STREAM: decisions_stream
       ACTIONS_STREAM: actions_stream
       WORKER_GROUP: assist_group
-      DB_DSN: ${DB_DNS}
+      DB_DSN: ${DB_DSN}
       USE_OLLAMA: "true"
       OLLAMA_URL: "http://ollama:11434"
 #    depends_on: 
@@ -81,7 +81,6 @@ services:
 #      - ollama
     networks: 
       - assist
-      - data
 
   grafana:
     image: grafana/grafana:11.0.0
@@ -93,7 +92,15 @@ services:
     ports:
       - "3000:3000"
     networks:  
-      - monitoring
+      - assist
+
+  node_exporter:
+    image: prom/node-exporter:v1.8.2
+    pid: host
+    network_mode: "host"
+    command:
+      - --collector.systemd
+      - --no-collector.hwmon
     
   prometheus:
     image: prom/prometheus:v2.54.1
@@ -103,7 +110,7 @@ services:
 #    ports:
 #      - "9090:9090"
     networks: 
-      - monitoring
+      - assist
 
   alertmanager:
     image: prom/alertmanager:v0.27.0
@@ -114,7 +121,7 @@ services:
 #    depends_on:  
 #      - agent-api
     networks: 
-      - monitoring
+      - assist
 
   loki:
     image: grafana/loki:2.9.6
@@ -125,7 +132,7 @@ services:
 #    ports:
 #      - "3100:3100"
     networks: 
-      - monitoring
+      - assist
 
   promtail:
     image: grafana/promtail:2.9.6
@@ -136,10 +143,8 @@ services:
 #    depends_on: 
 #      - loki
     networks:  
-      - monitoring
+      - assist
   
 networks:
   assist:
-  data:
-  monitoring:
     internal: true
